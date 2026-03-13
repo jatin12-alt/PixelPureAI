@@ -2,12 +2,12 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronsLeftRight } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ComparisonSlider({ before, after }) {
-  // Ensure we are working with string URLs to avoid [object Object] errors
-  // Use null instead of empty string to avoid React's "empty string src" warning
-  const beforeUrl = typeof before === 'string' ? before : (before?.url || before?.src || null);
-  const afterUrl = typeof after === 'string' ? after : (after?.url || after?.src || null);
+  // Extract URLs with fallback
+  const beforeUrl = typeof before === 'string' ? before : (before?.url || before?.src || before?.toString() || "");
+  const afterUrl = typeof after === 'string' ? after : (after?.url || after?.src || after?.toString() || "");
 
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isResizing, setIsResizing] = useState(false);
@@ -15,9 +15,6 @@ export default function ComparisonSlider({ before, after }) {
   const [isBeforeLoaded, setIsBeforeLoaded] = useState(false);
   const [isAfterLoaded, setIsAfterLoaded] = useState(false);
   const containerRef = useRef(null);
-
-  // Safeguard: If URLs are missing, don't render or show error
-  if (!beforeUrl || !afterUrl) return null;
 
   const updateWidth = useCallback(() => {
     if (containerRef.current) {
@@ -33,9 +30,23 @@ export default function ComparisonSlider({ before, after }) {
 
   // Reset loading states when URLs change
   useEffect(() => {
-    setIsBeforeLoaded(false);
-    setIsAfterLoaded(false);
+    if (beforeUrl) setIsBeforeLoaded(false);
+    if (afterUrl) setIsAfterLoaded(false);
   }, [beforeUrl, afterUrl]);
+
+  const handleBeforeLoad = () => {
+    setIsBeforeLoaded(true);
+  };
+
+  const handleAfterLoad = () => {
+    setIsAfterLoaded(true);
+  };
+
+  const handleLoadError = (side) => {
+    toast.error(`Failed to load ${side === 'before' ? 'original' : 'enhanced'} image. Check your connection.`);
+    if (side === 'before') setIsBeforeLoaded(true); // Don't block UI on error
+    if (side === 'after') setIsAfterLoaded(true);
+  };
 
   const handleMove = useCallback((clientX) => {
     if (!containerRef.current) return;
@@ -67,7 +78,21 @@ export default function ComparisonSlider({ before, after }) {
     };
   }, []);
 
-  // Logic preserved ✓ | UI updated ✓
+  // Rules of Hooks: All hooks must be called before early return
+  if (!beforeUrl && !afterUrl) return (
+    <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-bg-secondary rounded-3xl border border-dashed border-border text-text-muted">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
+          <ChevronsLeftRight className="h-6 w-6 opacity-20" />
+        </div>
+        <p className="text-xs font-bold uppercase tracking-widest opacity-40">Awaiting photo processing...</p>
+      </div>
+    </div>
+  );
+
+  const finalBeforeUrl = beforeUrl || afterUrl;
+  const finalAfterUrl = afterUrl || beforeUrl;
+
   return (
     <div 
       ref={containerRef}
@@ -82,57 +107,58 @@ export default function ComparisonSlider({ before, after }) {
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-bg-primary/50 backdrop-blur-sm">
           <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin mb-4" />
           <span className="text-xs font-bold text-text-muted uppercase tracking-widest animate-pulse">
-            Processing Visuals...
+            Loading Visuals...
           </span>
         </div>
       )}
 
       {/* After Image (Background) */}
       <img
-        src={afterUrl}
+        key={`after-${finalAfterUrl}`}
+        src={finalAfterUrl}
         alt="After"
-        onLoad={() => setIsAfterLoaded(true)}
+        onLoad={handleAfterLoad}
+        onError={() => handleLoadError('after')}
         className={`absolute inset-0 w-full h-full object-contain bg-black/20 transition-opacity duration-500 ${isAfterLoaded ? 'opacity-100' : 'opacity-0'}`}
         draggable={false}
       />
 
       {/* Before Image (Clipped) */}
       <div 
-        className="absolute inset-0 h-full overflow-hidden z-10"
-        style={{ width: `${sliderPosition}%` }}
+        className="absolute inset-0 w-full h-full overflow-hidden transition-opacity duration-500"
+        style={{ 
+          clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
+          opacity: isBeforeLoaded ? 1 : 0,
+          zIndex: 10
+        }}
       >
-        <div 
-          className="absolute inset-y-0 left-0 h-full" 
-          style={{ width: containerWidth ? `${containerWidth}px` : '100%' }}
-        >
-          <img
-            src={beforeUrl}
-            alt="Before"
-            onLoad={() => setIsBeforeLoaded(true)}
-            className={`absolute inset-0 w-full h-full object-contain bg-black/20 transition-opacity duration-500 ${isBeforeLoaded ? 'opacity-100' : 'opacity-0'}`}
-            draggable={false}
-          />
-        </div>
-        
-        {/* BEFORE Label */}
-        <div className={`absolute top-6 left-6 z-20 bg-black/60 backdrop-blur-xs border border-white/10 text-white text-[11px] font-bold px-[10px] py-[4px] rounded-full uppercase tracking-widest transition-opacity duration-300 ${isBeforeLoaded ? 'opacity-100' : 'opacity-0'}`}>
-          BEFORE
-        </div>
+        <img
+          key={`before-${finalBeforeUrl}`}
+          src={finalBeforeUrl}
+          alt="Before"
+          onLoad={handleBeforeLoad}
+          onError={() => handleLoadError('before')}
+          className="absolute inset-0 w-full h-full object-contain bg-black/20"
+          draggable={false}
+        />
       </div>
 
-      {/* AFTER Label */}
-      <div className={`absolute top-6 right-6 z-20 bg-accent/70 backdrop-blur-xs border border-white/10 text-white text-[11px] font-bold px-[10px] py-[4px] rounded-full uppercase tracking-widest transition-opacity duration-300 ${isAfterLoaded ? 'opacity-100' : 'opacity-0'}`}>
-        AFTER
-      </div>
-
-      {/* Slider Handle */}
+      {/* Slider Line & Handle */}
       <div 
-        className={`absolute inset-y-0 z-30 w-[2px] cursor-col-resize flex items-center justify-center bg-linear-to-b from-accent to-accent2 transition-opacity duration-300 ${isBeforeLoaded && isAfterLoaded ? 'opacity-100' : 'opacity-0'}`}
+        className="absolute inset-y-0 z-30 w-1 bg-white/30 backdrop-blur-md cursor-col-resize group"
         style={{ left: `${sliderPosition}%` }}
       >
-        <div className="w-[44px] h-[44px] bg-white rounded-full shadow-[0_0_20px_var(--accent-glow)] flex items-center justify-center border-[3px] border-accent -ml-px transition-transform active:scale-90">
-          <ChevronsLeftRight className="h-5 w-5 text-accent" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+          <ChevronsLeftRight className="h-5 w-5 text-black" />
         </div>
+      </div>
+
+      {/* Labels */}
+      <div className="absolute top-6 left-6 z-20 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-white/70">
+        Original
+      </div>
+      <div className="absolute top-6 right-6 z-20 px-3 py-1.5 bg-accent/40 backdrop-blur-md border border-accent/20 rounded-full text-[10px] font-black uppercase tracking-widest text-white">
+        Enhanced
       </div>
     </div>
   );

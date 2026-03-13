@@ -1,23 +1,22 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import ComparisonSlider from "@/components/comparison-slider";
 import { Sparkles, PlayCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function DemoPage() {
-  // Sample images for demo
-  const demoPair = {
-    before: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1000&auto=format&fit=crop",
-    after: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1000&auto=format&fit=crop&blur=0&sharp=100"
-  };
+// Dynamically import ComparisonSlider to improve page load speed
+const ComparisonSlider = dynamic(() => import("@/components/comparison-slider"), {
+  ssr: false,
+  loading: () => <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-bg-secondary rounded-4xl animate-pulse" />
+});
 
-  // Note: In a real app, 'after' would be an actual upscaled/restored version. 
-  // For this demo UI, we'll use a high-quality landscape photo.
-  const sampleBefore = "https://ik.imagekit.io/demo/img/tr:bl-10/medium_cafe_B1iN9In6J.jpg";
-  const sampleAfter = "https://ik.imagekit.io/demo/img/medium_cafe_B1iN9In6J.jpg";
+export default function DemoPage() {
+  // Sample images for demo - Using reliable Unsplash images
+  const sampleBefore = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1000&auto=format&fit=crop&blur=50";
+  const sampleAfter = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1000&auto=format&fit=crop";
 
   return (
     <div className="min-h-screen bg-bg-primary pt-20 pb-32 font-dm text-text-primary">

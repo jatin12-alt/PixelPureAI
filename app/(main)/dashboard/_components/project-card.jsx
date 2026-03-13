@@ -19,6 +19,16 @@ export default function ProjectCard({ project, onEdit }) {
   const originalUrl = (typeof project.originalImageUrl === 'string' ? project.originalImageUrl : project.originalImageUrl?.url) || null;
   const thumbnailUrl = (typeof project.thumbnailUrl === 'string' ? project.thumbnailUrl : project.thumbnailUrl?.url) || null;
   
+  // Optimize preview image using ImageKit parameters
+  let previewUrl = thumbnailUrl || originalUrl;
+  if (previewUrl && previewUrl.includes("ik.imagekit.io")) {
+    const [baseUrl, queryString] = previewUrl.split("?");
+    const params = new URLSearchParams(queryString || "");
+    // Set low quality and small width for grid thumbnails
+    params.set("tr", "w-400,q-60,fo-auto");
+    previewUrl = `${baseUrl}?${params.toString()}`;
+  }
+
   // Robust URL reconstruction to avoid double question marks
   let restoredUrl = originalUrl;
   if (originalUrl && originalUrl.includes("ik.imagekit.io")) {
@@ -74,10 +84,11 @@ export default function ProjectCard({ project, onEdit }) {
     >
       {/* Thumbnail Area */}
       <div className="aspect-4/3 relative overflow-hidden bg-bg-tertiary">
-        {thumbnailUrl || originalUrl ? (
+        {previewUrl ? (
           <img
-            src={thumbnailUrl || originalUrl}
+            src={previewUrl}
             alt={project.title}
+            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (

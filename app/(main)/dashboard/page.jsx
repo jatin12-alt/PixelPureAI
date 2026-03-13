@@ -1,30 +1,43 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Plus, Image as ImageIcon, Sparkles, Upload, History, Zap, FolderOpen, Layout, Coins, Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useConvexQuery, useConvexMutation } from "@/hooks/use-convex-query";
+import { useConvexQuery, useConvexMutation, useConvexPaginatedQuery } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
-import { ProjectGrid } from "./_components/project-grid";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { useCredits } from "@/hooks/use-credits";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+// Dynamically import ProjectGrid to improve dashboard load speed
+const ProjectGrid = dynamic(() => import("./_components/project-grid").then(mod => mod.ProjectGrid), {
+  loading: () => <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse bg-white/5 rounded-3xl h-96" />
+});
+
 export default function DashboardPage() {
-  const { user } = useUser();
+  const { user, isSignedIn } = useUser();
   const router = useRouter();
   const fileInputRef = useRef(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Get user's projects
-  const { data: projects, isLoading: isProjectsLoading } = useConvexQuery(
-    api.projects.getUserProjects
+  // Get user's projects (Paginated)
+  const { 
+    results: projects, 
+    isLoading: isProjectsLoading, 
+    loadMore, 
+    isDone, 
+    isMoreLoading 
+  } = useConvexPaginatedQuery(
+    api.projects.getUserProjects,
+    isSignedIn ? {} : "skip",
+    { initialNumItems: 12 }
   );
 
   // Get user profile for plan info
-  const { data: convexUser } = useConvexQuery(api.users.getCurrentUser);
+  const { data: convexUser } = useConvexQuery(api.users.getCurrentUser, isSignedIn ? undefined : "skip");
 
   // Credits hook
   const { balance: creditBalance, isLoading: isCreditsLoading } = useCredits();
@@ -146,7 +159,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Projects Grid Section */}
-        <section className="min-h-[400px]">
+        <section className="min-h-[400px] mb-20">
           {isProjectsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
@@ -154,7 +167,30 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : projects?.length > 0 ? (
-            <ProjectGrid projects={projects} />
+            <>
+              <ProjectGrid projects={projects} />
+              
+              {!isDone && (
+                <div className="mt-12 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => loadMore(12)}
+                    disabled={isMoreLoading}
+                    className="rounded-full border-border hover:bg-bg-secondary px-8 font-bold uppercase tracking-widest text-xs h-14"
+                  >
+                    {isMoreLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Loading More...
+                      </>
+                    ) : (
+                      "Load More Projects"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}

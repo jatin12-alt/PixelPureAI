@@ -44,7 +44,7 @@ export function usePlanAccess() {
   // Check if user has reached export limits
   const canExport = (currentExportsThisMonth) => {
     if (isPro) return true;
-    return currentExportsThisMonth < 20;
+    return currentExportsThisMonth < 100;
   };
 
   return {

@@ -1,21 +1,21 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import { paginationOptsValidator } from "convex/server";
 
-// Get all projects for the current user
+// Get paginated projects for the current user
 export const getUserProjects = query({
-  handler: async (ctx) => {
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
     const user = await ctx.runQuery(api.users.getCurrentUser);
-    if (!user) return [];
+    if (!user) return { page: [], isDone: true, continueCursor: "" };
 
     // Get user's projects, ordered by most recently updated
-    const projects = await ctx.db
+    return await ctx.db
       .query("projects")
       .withIndex("by_user_updated", (q) => q.eq("userId", user._id))
       .order("desc")
-      .collect();
-
-    return projects;
+      .paginate(args.paginationOpts);
   },
 });
 
@@ -29,6 +29,7 @@ export const create = mutation({
     width: v.number(),
     height: v.number(),
     canvasState: v.optional(v.any()),
+    activeTransformations: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.runQuery(api.users.getCurrentUser);
@@ -58,6 +59,7 @@ export const create = mutation({
       width: args.width,
       height: args.height,
       canvasState: args.canvasState,
+      activeTransformations: args.activeTransformations,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });

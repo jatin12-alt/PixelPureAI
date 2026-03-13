@@ -18,16 +18,69 @@ const PricingCard = ({
   buttonText,
 }) => {
   const [ref, isVisible] = useIntersectionObserver();
-  const { isSignedIn } = useUser();
+  const { user, isSignedIn } = useUser();
   const router = useRouter();
 
-  const handleAction = () => {
+  const handleAction = async () => {
     if (price === 0) {
       router.push("/studio");
       return;
     }
     
-    toast.info("Coming soon! Razorpay integration in progress.");
+    if (!isSignedIn) {
+      toast.info("Please sign in to upgrade.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: id, amount: price }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount: data.amount,
+          currency: data.currency,
+          name: "PixelPureAI",
+          description: `Upgrade to ${plan} Plan`,
+          order_id: data.orderId,
+          image: "/logo.png",
+          handler: async function (response) {
+            const verifyRes = await fetch("/api/payments/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              toast.success("Payment successful! Your plan is being activated.");
+              router.push("/studio");
+            } else {
+              toast.error("Payment verification failed.");
+            }
+          },
+          prefill: {
+            name: user?.fullName || "",
+            email: user?.primaryEmailAddress?.emailAddress || "",
+          },
+          theme: {
+            color: "#8B5CF6",
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        toast.error("Failed to initiate payment.");
+      }
+    } catch (err) {
+      toast.error("An error occurred during payment.");
+    }
   };
 
   return (
@@ -94,7 +147,7 @@ const PricingSection = () => {
       plan: "Free",
       price: 0,
       features: [
-        "20 Credits included",
+        "100 Credits included",
         "Basic AI Tools",
         "Standard Export",
         "Community Support",
@@ -123,13 +176,13 @@ const PricingSection = () => {
       price: 799,
       features: [
         "1000 Credits per month",
-        "API Access",
-        "Batch Processing",
         "Everything in Pro",
-        "Priority API access",
+        "Batch Processing",
+        "Priority API Access",
+        "Commercial License",
         "24/7 Dedicated Support",
       ],
-      buttonText: "Upgrade to Business",
+      buttonText: "Go Business",
     },
   ];
 

@@ -37,38 +37,12 @@ export async function POST(request) {
       folder: "/guest_uploads",
     });
 
-    // Generate thumbnail URL using ImageKit transformations
-    const thumbnailUrl = imagekit.url({
-      src: uploadResponse.url,
-      transformation: [
-        {
-          width: 400,
-          height: 300,
-          cropMode: "maintain_ar",
-          quality: 80,
-        },
-      ],
-    });
+    if (!uploadResponse.url) throw new Error("Upload response missing URL");
 
-    // Return upload data
-    return NextResponse.json({
-      success: true,
-      url: uploadResponse.url,
-      thumbnailUrl: thumbnailUrl,
-      fileId: uploadResponse.fileId,
-      width: uploadResponse.width,
-      height: uploadResponse.height,
-      size: uploadResponse.size,
-      name: uploadResponse.name,
-    });
+    return NextResponse.json({ success: true, url: uploadResponse.url });
   } catch (error) {
-    console.error("ImageKit upload error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to upload image",
-        details: error.message,
-      },
+      { success: false, error: "Upload failed" },
       { status: 500 }
     );
   }

@@ -1,13 +1,21 @@
 "use client";
 
-import FeaturesSection from "@/components/features";
-import InteractiveStats from "@/components/interactive-stats";
-import PricingSection from "@/components/pricing";
-import TestimonialsSection from "@/components/testimonials";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
+import { FloatingShapes } from "@/components/floating-shapes";
+
+// Dynamically import heavy sections to improve initial load time
+const FeaturesSection = dynamic(() => import("@/components/features"), {
+  loading: () => <div className="h-96 w-full animate-pulse bg-white/5 rounded-3xl" />,
+});
+const InteractiveStats = dynamic(() => import("@/components/interactive-stats"), {
+  ssr: false, // Stats often use browser APIs or complex animations
+});
+const PricingSection = dynamic(() => import("@/components/pricing"));
+const TestimonialsSection = dynamic(() => import("@/components/testimonials"));
 
 // Hero Section Component
 const HeroSection = () => {
@@ -21,12 +29,13 @@ const HeroSection = () => {
 
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      <FloatingShapes />
       <div className="text-center z-10 px-6">
         <div
           className={`transition-all duration-1000 ${textVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
         >
           <h1 className="text-6xl md:text-9xl font-black mb-6 tracking-tight">
-            <span className="bg-gradient-to-r from-indigo-400 to-blue-500 bg-clip-text text-transparent animate-pulse">PixelPureAI</span>
+            <span className="bg-linear-to-r from-indigo-400 to-blue-500 bg-clip-text text-transparent animate-pulse">PixelPureAI</span>
           </h1>
 
           <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
@@ -35,7 +44,7 @@ const HeroSection = () => {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
             <Link href="/studio">
-              <Button size="xl" className="rounded-full px-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold shadow-2xl shadow-indigo-500/40 border-none transition-all hover:scale-105">
+              <Button size="xl" className="rounded-full px-12 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold shadow-2xl shadow-indigo-500/40 border-none transition-all hover:scale-105">
                 <Sparkles className="h-5 w-5 mr-2" />
                 Try PixelPureAI
               </Button>
@@ -60,7 +69,7 @@ const HeroSection = () => {
           style={{ perspective: "1000px" }}
         >
           <div className="backdrop-blur-lg bg-white/10 border border-white/20 rounded-3xl p-6 transform-gpu">
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-8 min-h-96">
+            <div className="bg-linear-to-r from-slate-900 to-slate-800 rounded-2xl p-8 min-h-96">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex space-x-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -89,7 +98,7 @@ const HeroSection = () => {
               </div>
 
               <div className="flex items-center justify-center">
-                <div className="w-full h-48 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-2xl shadow-2xl shadow-blue-500/50 flex items-center justify-center">
+                <div className="w-full h-48 bg-linear-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-2xl shadow-2xl shadow-blue-500/50 flex items-center justify-center">
                   <div className="text-white font-bold">Your Canvas</div>
                 </div>
               </div>
@@ -115,13 +124,13 @@ const App = () => {
       <section className="py-32 text-center bg-indigo-600/5">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-5xl md:text-6xl font-bold mb-8 text-white tracking-tight">
-            Ready to <span className="bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">Restore</span> your memories?
+            Ready to <span className="bg-linear-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">Restore</span> your memories?
           </h2>
           <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">
             Join thousands of creators who are already using PixelPureAI to transform their old photos into HD masterpieces.
           </p>
           <Link href="/studio">
-            <Button size="xl" className="rounded-full px-16 h-16 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold shadow-2xl shadow-indigo-500/40 border-none transition-all hover:scale-105">
+            <Button size="xl" className="rounded-full px-16 h-16 text-lg bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold shadow-2xl shadow-indigo-500/40 border-none transition-all hover:scale-105">
               🌟 Try PixelPureAI
             </Button>
           </Link>

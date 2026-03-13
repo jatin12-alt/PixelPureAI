@@ -57,3 +57,65 @@ export const getCurrentUser = query({
     return user;
   },
 });
+
+export const createUser = mutation({
+  args: {
+    tokenIdentifier: v.string(),
+    name: v.string(),
+    email: v.string(),
+    imageUrl: v.string(),
+    plan: v.string(),
+    projectsUsed: v.number(),
+    exportsThisMonth: v.number(),
+    createdAt: v.number(),
+    lastActiveAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("users", args);
+  },
+});
+
+export const updateUser = mutation({
+  args: {
+    tokenIdentifier: v.string(),
+    name: v.string(),
+    email: v.string(),
+    imageUrl: v.string(),
+    lastActiveAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      name: args.name,
+      email: args.email,
+      imageUrl: args.imageUrl,
+      lastActiveAt: args.lastActiveAt,
+    });
+  },
+});
+
+export const deleteUser = mutation({
+  args: {
+    tokenIdentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.delete(user._id);
+  },
+});

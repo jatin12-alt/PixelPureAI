@@ -9,8 +9,10 @@
  */
 
 import type * as credits from "../credits.js";
+import type * as crons from "../crons.js";
+import type * as http from "../http.js";
 import type * as projects from "../projects.js";
-import type * as useCredits from "../useCredits.js";
+import type * as subscriptions from "../subscriptions.js";
 import type * as users from "../users.js";
 
 import type {
@@ -21,8 +23,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   credits: typeof credits;
+  crons: typeof crons;
+  http: typeof http;
   projects: typeof projects;
-  useCredits: typeof useCredits;
+  subscriptions: typeof subscriptions;
   users: typeof users;
 }>;
 

@@ -9,10 +9,12 @@ import { BarLoader } from "react-spinners";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { usePathname } from "next/navigation";
 import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "./ui/sheet";
 import { useCredits } from "@/hooks/use-credits";
+import { CreditDetailsModal } from "./credit-details-modal";
 
 export default function Header() {
+  const [isCreditsModalOpen, setIsCreditsModalOpen] = React.useState(false);
   const { isLoading: isUserLoading } = useStoreUser();
   const { balance: creditBalance, isLoading: isCreditsLoading } = useCredits();
   const path = usePathname();
@@ -72,7 +74,10 @@ export default function Header() {
         {/* Auth Actions & Mobile Menu */}
         <div className="flex items-center gap-4">
           <Authenticated>
-            <div className="hidden sm:flex items-center gap-3 mr-2">
+            <div 
+              className="hidden sm:flex items-center gap-3 mr-2 cursor-pointer hover:scale-105 transition-all"
+              onClick={() => setIsCreditsModalOpen(true)}
+            >
               <div className="bg-bg-tertiary border border-border rounded-full px-4 py-1.5 flex items-center gap-2">
                 <span className="text-lg leading-none">🪙</span>
                 <span className="text-[13px] font-bold text-text-primary">
@@ -81,6 +86,11 @@ export default function Header() {
                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Credits</span>
               </div>
             </div>
+
+            <CreditDetailsModal 
+              isOpen={isCreditsModalOpen} 
+              onClose={() => setIsCreditsModalOpen(false)} 
+            />
 
             <UserButton
               appearance={{
@@ -115,23 +125,28 @@ export default function Header() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="bg-bg-secondary/95 backdrop-blur-xl border-r border-border p-0 flex flex-col h-full">
-                <div className="p-6 border-b border-border">
-                  <Link href="/" className="flex items-center gap-2 group">
-                    <Sparkles className="h-5 w-5 text-accent" />
-                    <span className="text-lg font-display font-bold text-text-primary tracking-tight">PixelPure</span>
+              <SheetContent side="left" className="bg-[#0A0A14]/95 backdrop-blur-2xl border-r border-white/10 p-0 flex flex-col h-full w-[300px] shadow-2xl">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Navigation Menu</SheetTitle>
+                </SheetHeader>
+                <div className="p-8 border-b border-white/5">
+                  <Link href="/" className="flex items-center gap-3 group">
+                    <div className="w-10 h-10 rounded-2xl bg-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-accent/20">
+                      <Sparkles className="h-6 w-6 text-accent" />
+                    </div>
+                    <span className="text-xl font-display font-black text-white tracking-tighter">PixelPure</span>
                   </Link>
                 </div>
 
-                <nav className="flex-1 flex flex-col py-6">
+                <nav className="flex-1 flex flex-col py-8 px-4 gap-2">
                   {navLinks.map((link) => (
                     <React.Fragment key={`mobile-${link.href}`}>
                       <Authenticated key={`mobile-auth-${link.href}`}>
                         <Link 
                           href={link.href} 
-                          className={`flex items-center gap-4 px-6 py-4 text-base font-medium transition-all ${path === link.href ? "bg-accent/10 text-accent border-r-2 border-accent" : "text-text-muted hover:text-text-primary"}`}
+                          className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 ${path === link.href ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-text-muted hover:bg-white/5 hover:text-white"}`}
                         >
-                          <link.icon className="h-5 w-5" />
+                          <link.icon className={`h-5 w-5 ${path === link.href ? "text-white" : "text-accent/60"}`} />
                           {link.label}
                         </Link>
                       </Authenticated>
@@ -139,9 +154,9 @@ export default function Header() {
                         <Unauthenticated key={`mobile-unauth-${link.href}`}>
                           <Link 
                             href={link.href} 
-                            className={`flex items-center gap-4 px-6 py-4 text-base font-medium transition-all ${path === link.href ? "bg-accent/10 text-accent border-r-2 border-accent" : "text-text-muted hover:text-text-primary"}`}
+                            className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 ${path === link.href ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-text-muted hover:bg-white/5 hover:text-white"}`}
                           >
-                            <link.icon className="h-5 w-5" />
+                            <link.icon className={`h-5 w-5 ${path === link.href ? "text-white" : "text-accent/60"}`} />
                             {link.label}
                           </Link>
                         </Unauthenticated>
@@ -150,26 +165,38 @@ export default function Header() {
                   ))}
                 </nav>
 
-                <div className="p-6 border-t border-border bg-bg-tertiary/50">
+                <div className="p-8 border-t border-white/5 bg-white/2">
                   <Unauthenticated>
                     <SignInButton mode="modal">
-                      <Button className="w-full btn-primary h-12 font-bold uppercase tracking-widest text-xs rounded-xl">
+                      <Button className="w-full btn-primary h-14 font-bold uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-accent/20">
                         Sign In to Get Started
                       </Button>
                     </SignInButton>
                   </Unauthenticated>
                   <Authenticated>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <UserButton afterSignOutUrl="/" />
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10">
+                      <div className="flex items-center gap-4">
+                        <UserButton 
+                          appearance={{
+                            elements: {
+                              userButtonAvatarBox: "w-10 h-10"
+                            }
+                          }}
+                          afterSignOutUrl="/" 
+                        />
                         <div className="flex flex-col">
-                          <span className="text-xs font-bold text-text-primary">My Account</span>
-                          <span className="text-[10px] text-text-muted">Manage profile & billing</span>
+                          <span className="text-[13px] font-bold text-white">My Account</span>
+                          <span className="text-[10px] text-text-muted uppercase tracking-widest font-black">Pro Plan</span>
                         </div>
                       </div>
-                      <div className="bg-bg-tertiary border border-border rounded-full px-3 py-1 flex items-center gap-1.5">
+                      <div 
+                        className="bg-accent/20 border border-accent/30 rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-inner cursor-pointer"
+                        onClick={() => {
+                          setIsCreditsModalOpen(true);
+                        }}
+                      >
                         <span className="text-xs">🪙</span>
-                        <span className="text-xs font-bold text-text-primary">{creditBalance}</span>
+                        <span className="text-xs font-black text-white">{creditBalance}</span>
                       </div>
                     </div>
                   </Authenticated>

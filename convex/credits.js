@@ -4,8 +4,9 @@ import { v } from "convex/values";
 
 // ── Plan credit limits ─────────────────────────────────────────────────────
 const PLAN_CREDITS = {
-  free: 20,
+  free: 100,
   pro: 200,
+  business: 1000,
 };
 
 // ── Helper: get next monthly reset timestamp ───────────────────────────────
@@ -15,11 +16,10 @@ function nextMonthReset() {
   return next.getTime();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// QUERY: getCredits
-// Returns the credit record for the current user.
-// Call this in useCredits hook to get live balance.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * QUERY: getCredits
+ * Returns the credit record for the current user.
+ */
 export const getCredits = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
@@ -34,18 +34,32 @@ export const getCredits = query({
   },
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MUTATION: initCredits
-// Creates a credit record for a new user.
-// Call this when a new user signs up (in your Clerk webhook or user sync).
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * QUERY: getCreditHistory
+ * Returns history of credit transactions for the user.
+ */
+export const getCreditHistory = query({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    if (!userId) return [];
+    return await ctx.db
+      .query("credit_history")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(10);
+  },
+});
+
+/**
+ * MUTATION: initCredits
+ * Creates a credit record for a new user.
+ */
 export const initCredits = mutation({
   args: {
     userId: v.string(),
-    plan: v.optional(v.union(v.literal("free"), v.literal("pro"))),
+    plan: v.optional(v.union(v.literal("free"), v.literal("pro"), v.literal("business"))),
   },
   handler: async (ctx, { userId, plan = "free" }) => {
-    // Don't create duplicate records
     const existing = await ctx.db
       .query("credits")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -65,17 +79,15 @@ export const initCredits = mutation({
   },
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MUTATION: deductCredits
-// Deducts `amount` credits from user balance.
-// Throws if balance is insufficient.
-// Call this AFTER a successful ImageKit transformation.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * MUTATION: deductCredits
+ * Deducts credits from user balance.
+ */
 export const deductCredits = mutation({
   args: {
     userId: v.string(),
     amount: v.number(),
-    toolName: v.optional(v.string()), // for logging/debugging
+    toolName: v.optional(v.string()),
   },
   handler: async (ctx, { userId, amount, toolName }) => {
     const record = await ctx.db
@@ -83,19 +95,22 @@ export const deductCredits = mutation({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
-    if (!record) {
-      throw new Error("Credit record not found. Please refresh and try again.");
-    }
-
-    if (record.balance < amount) {
-      throw new Error(
-        `Not enough credits. Need ${amount}, have ${record.balance}.`
-      );
+    if (!record || record.balance < amount) {
+      throw new Error("Insufficient credits");
     }
 
     await ctx.db.patch(record._id, {
       balance: record.balance - amount,
       totalConsumed: record.totalConsumed + amount,
+    });
+
+    // Log to history
+    await ctx.db.insert("credit_history", {
+      userId,
+      amount: -amount,
+      type: "deduction",
+      description: toolName || "AI Tool usage",
+      createdAt: Date.now(),
     });
 
     return {
@@ -105,10 +120,10 @@ export const deductCredits = mutation({
   },
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MUTATION: addCredits
-// Adds credits to user balance (used after payment / plan upgrade).
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * MUTATION: addCredits
+ * Adds credits to user balance.
+ */
 export const addCredits = mutation({
   args: {
     userId: v.string(),
@@ -121,27 +136,48 @@ export const addCredits = mutation({
       .unique();
 
     if (!record) {
-      throw new Error("Credit record not found.");
+      // If no record, initialize with plan default + extra
+      const startBalance = PLAN_CREDITS.free + amount;
+      await ctx.db.insert("credits", {
+        userId,
+        balance: startBalance,
+        totalEarned: startBalance,
+        totalConsumed: 0,
+        resetDate: nextMonthReset(),
+      });
+    } else {
+      await ctx.db.patch(record._id, {
+        balance: record.balance + amount,
+        totalEarned: record.totalEarned + amount,
+      });
     }
 
-    await ctx.db.patch(record._id, {
-      balance: record.balance + amount,
-      totalEarned: record.totalEarned + amount,
+    // Log to history
+    await ctx.db.insert("credit_history", {
+      userId,
+      amount,
+      type: "addition",
+      description: "Credits added",
+      createdAt: Date.now(),
     });
 
-    return { success: true, newBalance: record.balance + amount };
+    const updatedRecord = await ctx.db
+      .query("credits")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+
+    return { success: true, newBalance: updatedRecord.balance };
   },
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MUTATION: resetMonthlyCredits
-// Resets balance to plan default on monthly reset date.
-// Call this from a Convex scheduled function (cron).
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * MUTATION: resetMonthlyCredits
+ * Resets balance to plan default on monthly reset date.
+ */
 export const resetMonthlyCredits = mutation({
   args: {
     userId: v.string(),
-    plan: v.union(v.literal("free"), v.literal("pro")),
+    plan: v.union(v.literal("free"), v.literal("pro"), v.literal("business")),
   },
   handler: async (ctx, { userId, plan }) => {
     const record = await ctx.db
@@ -159,6 +195,48 @@ export const resetMonthlyCredits = mutation({
       resetDate: nextMonthReset(),
     });
 
+    // Log to history
+    await ctx.db.insert("credit_history", {
+      userId,
+      amount: resetAmount,
+      type: "reset",
+      description: "Monthly credit reset",
+      createdAt: Date.now(),
+    });
+
     return { success: true, newBalance: resetAmount };
+  },
+});
+
+/**
+ * MUTATION: checkAndResetAllUsers
+ * Called by cron every day to check whose monthly reset is due.
+ */
+export const checkAndResetAllUsers = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    
+    const overdue = await ctx.db
+      .query("credits")
+      .filter((q) => q.lt(q.field("resetDate"), now))
+      .collect();
+
+    for (const record of overdue) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", record.userId))
+        .unique();
+
+      const plan = user?.plan || "free";
+      const resetAmount = PLAN_CREDITS[plan] || PLAN_CREDITS.free;
+
+      await ctx.db.patch(record._id, {
+        balance: resetAmount,
+        resetDate: nextMonthReset(),
+      });
+    }
+
+    return { success: true, count: overdue.length };
   },
 });

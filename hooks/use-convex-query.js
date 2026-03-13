@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,19 @@ export const useConvexQuery = (query, ...args) => {
     data: result,
     isLoading: result === undefined,
     error: null, // useQuery doesn't return error objects directly by default
+  };
+};
+
+export const useConvexPaginatedQuery = (query, args, options = { initialNumItems: 12 }) => {
+  const { results, status, loadMore } = usePaginatedQuery(query, args, options);
+  
+  return {
+    results,
+    status,
+    loadMore,
+    isLoading: status === "LoadingFirstPage",
+    isMoreLoading: status === "LoadingMore",
+    isDone: status === "Exhausted",
   };
 };
 

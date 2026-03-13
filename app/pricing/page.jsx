@@ -1,9 +1,13 @@
 "use client";
 
 import React from "react";
-import PricingSection from "@/components/pricing";
+import dynamic from "next/dynamic";
 import { Sparkles, CheckCircle2, Zap, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+
+const PricingSection = dynamic(() => import("@/components/pricing"), {
+  loading: () => <div className="h-96 w-full animate-pulse bg-white/5 rounded-3xl" />
+});
 
 export default function PricingPage() {
   return (
