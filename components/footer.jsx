@@ -9,8 +9,8 @@ import { usePathname } from "next/navigation";
 export default function Footer() {
   const path = usePathname();
 
-  if (path.includes("/editor") || path.includes("/studio")) {
-    return null; // Hide footer on editor and studio pages
+  if (path.includes("/studio")) {
+    return null; // Hide footer on studio page
   }
 
   return (
@@ -21,7 +21,7 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-1 space-y-6">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="flex items-center">
-                <span className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent tracking-tight">PixelPureAI</span>
+                <span className="text-xl font-bold bg-linear-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent tracking-tight">PixelPureAI</span>
               </div>
               <Sparkles className="h-5 w-5 text-indigo-400 group-hover:rotate-12 transition-transform duration-300" />
             </Link>

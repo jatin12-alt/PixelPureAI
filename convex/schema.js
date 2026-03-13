@@ -5,71 +5,55 @@ import { v } from "convex/values";
 export default defineSchema({
   // Users table - synced with Clerk authentication
   users: defineTable({
-    // Basic user info from Clerk
     name: v.string(),
     email: v.string(),
-    tokenIdentifier: v.string(), // Clerk user ID for auth
-    imageUrl: v.optional(v.string()), // Profile picture
-
-    // Subscription plan (managed by Clerk billing)
+    tokenIdentifier: v.string(),
+    imageUrl: v.optional(v.string()),
     plan: v.union(v.literal("free"), v.literal("pro")),
-
-    // Usage tracking for plan limits
-    projectsUsed: v.number(), // Current project count
-    exportsThisMonth: v.number(), // Monthly export limit tracking
-
-    // Activity timestamps
+    projectsUsed: v.number(),
+    exportsThisMonth: v.number(),
     createdAt: v.number(),
     lastActiveAt: v.number(),
   })
-    .index("by_token", ["tokenIdentifier"]) // Primary auth lookup
-    .index("by_email", ["email"]) // Email lookups
-    .searchIndex("search_name", { searchField: "name" }) // User search
+    .index("by_token", ["tokenIdentifier"])
+    .index("by_email", ["email"])
+    .searchIndex("search_name", { searchField: "name" })
     .searchIndex("search_email", { searchField: "email" }),
 
-  // Main projects table - stores editing sessions
+  // Projects table
   projects: defineTable({
-    // Basic project info
     title: v.string(),
-    userId: v.id("users"), // Owner reference
-
-    // Canvas dimensions and state
-    canvasState: v.any(), // Fabric.js canvas JSON (objects, layers, etc.)
-    width: v.number(), // Canvas width in pixels
-    height: v.number(), // Canvas height in pixels
-
-    // Image pipeline - tracks image transformations
-    originalImageUrl: v.optional(v.string()), // Initial uploaded image
-    currentImageUrl: v.optional(v.string()), // Current processed image
-    thumbnailUrl: v.optional(v.string()), // HW - Small preview for dashboard
-
-    // ImageKit transformation state
-    activeTransformations: v.optional(v.string()), // Current ImageKit URL params
-
-    // AI features state - tracks what AI processing has been applied
-    backgroundRemoved: v.optional(v.boolean()), // Has background been removed
-
-    // Organization
-    folderId: v.optional(v.id("folders")), // HW - Optional folder organization
-
-    // Timestamps
+    userId: v.id("users"),
+    canvasState: v.any(),
+    width: v.number(),
+    height: v.number(),
+    originalImageUrl: v.optional(v.string()),
+    currentImageUrl: v.optional(v.string()),
+    thumbnailUrl: v.optional(v.string()),
+    activeTransformations: v.optional(v.string()),
+    backgroundRemoved: v.optional(v.boolean()),
+    folderId: v.optional(v.id("folders")),
     createdAt: v.number(),
-    updatedAt: v.number(), // Last edit time
+    updatedAt: v.number(),
   })
-    .index("by_user", ["userId"]) // Get user's projects
-    .index("by_user_updated", ["userId", "updatedAt"]) // Recent projects
-    .index("by_folder", ["folderId"]), // Projects in folder
+    .index("by_user", ["userId"])
+    .index("by_user_updated", ["userId", "updatedAt"])
+    .index("by_folder", ["folderId"]),
 
-  // Simple folder organization
+  // Folders table
   folders: defineTable({
-    name: v.string(), // Folder name
-    userId: v.id("users"), // Owner
+    name: v.string(),
+    userId: v.id("users"),
     createdAt: v.number(),
-  }).index("by_user", ["userId"]), // User's folders
-});
+  }).index("by_user", ["userId"]),
 
-/* 
-PLAN LIMITS EXAMPLE:
-- Free: 3 projects, 20 exports/month, basic features only
-- Pro: Unlimited projects/exports, all AI features
-*/
+  // ── NEW: Credits table ─────────────────────────────────────────────────
+  // Tracks per-user credit balance and usage history
+  credits: defineTable({
+    userId: v.string(),          // Clerk tokenIdentifier (string, not v.id)
+    balance: v.number(),         // Current available credits
+    totalEarned: v.number(),     // Lifetime credits earned (for analytics)
+    totalConsumed: v.number(),   // Lifetime credits spent
+    resetDate: v.number(),       // Unix timestamp of next monthly reset
+  }).index("by_user", ["userId"]),
+});

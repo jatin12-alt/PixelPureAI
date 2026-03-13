@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { Sora, DM_Sans } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
@@ -9,7 +9,17 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { FloatingShapes } from "@/components/floating-shapes";
 import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const sora = Sora({ 
+  subsets: ["latin"], 
+  variable: "--font-sora",
+  weight: ['400', '600', '700', '800']
+});
+
+const dmSans = DM_Sans({ 
+  subsets: ["latin"], 
+  variable: "--font-dm",
+  weight: ['400', '500', '700']
+});
 
 export const metadata = {
   title: "PixelPureAI",
@@ -22,7 +32,7 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="icon" href="/logo-text.png" sizes="any" />
       </head>
-      <body className={`${inter.className}`}>
+      <body className={`${sora.variable} ${dmSans.variable} font-dm`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -37,7 +47,7 @@ export default function RootLayout({ children }) {
           >
             <ConvexClientProvider>
               <Header />
-              <main className="bg-slate-900 min-h-screen text-white overflow-x-hidden">
+              <main className="bg-bg-primary min-h-screen text-text-primary overflow-x-hidden">
                 <FloatingShapes />
                 <Toaster richColors />
 

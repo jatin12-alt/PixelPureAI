@@ -1,136 +1,189 @@
 "use client";
 
-import React, { useState } from "react";
-import { Plus, Image, Sparkles, Upload, History, Zap } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { Plus, Image as ImageIcon, Sparkles, Upload, History, Zap, FolderOpen, Layout, Coins, Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useConvexQuery } from "@/hooks/use-convex-query";
+import { useConvexQuery, useConvexMutation } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
-import { NewProjectModal } from "./_components/new-project-modal";
 import { ProjectGrid } from "./_components/project-grid";
 import { useUser } from "@clerk/nextjs";
+import { motion } from "framer-motion";
+import { useCredits } from "@/hooks/use-credits";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const { user } = useUser();
+  const router = useRouter();
+  const fileInputRef = useRef(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Get user's projects
-  const { data: projects, isLoading } = useConvexQuery(
+  const { data: projects, isLoading: isProjectsLoading } = useConvexQuery(
     api.projects.getUserProjects
   );
 
-  // Mock credit balance for now
-  const creditBalance = 10;
+  // Get user profile for plan info
+  const { data: convexUser } = useConvexQuery(api.users.getCurrentUser);
+
+  // Credits hook
+  const { balance: creditBalance, isLoading: isCreditsLoading } = useCredits();
+
+  // Mutations
+  const { mutate: createProject } = useConvexMutation(api.projects.create);
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File too large. Max 10MB allowed.");
+      return;
+    }
+
+    setIsCreating(true);
+    const toastId = toast.loading("Creating project...");
+
+    try {
+      // 1. Upload to ImageKit
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("fileName", file.name);
+
+      const uploadRes = await fetch("/api/imagekit/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      const uploadData = await uploadRes.json();
+
+      // 2. Create project in Convex
+      const projectId = await createProject({
+        title: file.name.split(".")[0] || "Untitled Project",
+        originalImageUrl: uploadData.url,
+        currentImageUrl: uploadData.url,
+        width: uploadData.width || 0,
+        height: uploadData.height || 0,
+        canvasState: {},
+      });
+
+      toast.success("Project created!", { id: toastId });
+      router.push(`/studio?projectId=${projectId}`);
+    } catch (err) {
+      console.error("Project creation error:", err);
+      toast.error(err.message || "Failed to create project", { id: toastId });
+    } finally {
+      setIsCreating(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 pt-32 pb-20">
-      <div className="container mx-auto px-6 max-w-7xl">
-        {/* Welcome Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-              Hello, <span className="bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">{user?.firstName || "Creator"}</span>!
-            </h1>
-            <p className="text-slate-400 text-lg">
-              Ready to restore your memories today?
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 bg-slate-900/50 border border-white/10 rounded-2xl px-6 py-4 backdrop-blur-xl">
-            <div className="bg-indigo-500/10 p-2 rounded-xl">
-              <Zap className="h-6 w-6 text-indigo-400" />
-            </div>
-            <div>
-              <p className="text-slate-500 text-xs uppercase font-bold tracking-wider">Credits Remaining</p>
-              <p className="text-2xl font-bold text-white">{creditBalance}</p>
-            </div>
-            <Button variant="primary" size="sm" className="ml-4 rounded-full px-4 h-9 text-xs">
-              Refill
-            </Button>
-          </div>
-        </div>
-
-        {/* Upload Zone Section */}
-        <div className="mb-20">
-          <div 
-            onClick={() => setShowNewProjectModal(true)}
-            className="group relative cursor-pointer overflow-hidden rounded-[2.5rem] bg-slate-900/40 border-2 border-dashed border-white/10 hover:border-indigo-500/50 transition-all duration-500"
+    <div className="min-h-screen bg-bg-primary pt-8 pb-20 font-dm text-text-primary">
+      <div className="max-w-7xl mx-auto px-6">
+        
+        {/* Page Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-1"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            <div className="relative flex flex-col items-center justify-center py-20 px-6 text-center">
-              <div className="w-24 h-24 rounded-3xl bg-slate-800 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all duration-500 shadow-2xl">
-                <Upload className="h-10 w-10 text-indigo-400" />
-              </div>
-              
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 group-hover:text-indigo-300 transition-colors">
-                Drop your photo here
-              </h3>
-              
-              <p className="text-slate-400 text-lg max-w-md mb-8">
-                Or click to browse from your device. Support for PNG, JPG up to 20MB.
-              </p>
-              
-              <Button size="xl" className="rounded-full px-12 bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-500/20">
-                <Sparkles className="h-5 w-5 mr-2" />
-                Restore Now
-              </Button>
-            </div>
-          </div>
-        </div>
+            <h1 className="text-4xl font-display font-extrabold tracking-tight bg-linear-to-r from-white to-text-muted bg-clip-text text-transparent">
+              My Projects
+            </h1>
+            <p className="text-text-muted text-sm font-medium">
+              Manage and enhance your visual library
+            </p>
+          </motion.div>
 
-        {/* History Section */}
-        <div className="space-y-8">
-          <div className="flex items-center justify-between border-b border-white/5 pb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-purple-500/10 p-2 rounded-xl">
-                <History className="h-5 w-5 text-purple-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Recent Projects</h2>
-            </div>
-            {projects?.length > 0 && (
-              <p className="text-slate-500 text-sm font-medium">{projects.length} files found</p>
+          <Button 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isCreating}
+            className="btn-primary h-12 px-8 font-bold uppercase tracking-widest text-xs rounded-full shadow-lg shadow-accent/20"
+          >
+            {isCreating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4 mr-2" />
             )}
+            New Project
+          </Button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileSelect} 
+            accept="image/*" 
+            className="hidden" 
+          />
+        </header>
+
+        {/* Stats Row */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex flex-wrap gap-4 mb-12"
+        >
+          <div className="bg-bg-secondary/50 backdrop-blur-md border border-border rounded-full px-6 py-2.5 flex items-center gap-3 hover:border-accent/30 transition-colors">
+            <Layout className="h-4 w-4 text-accent" />
+            <span className="text-sm font-bold">{projects?.length || 0}</span>
+            <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Projects</span>
           </div>
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="aspect-square rounded-3xl bg-slate-900/50 animate-pulse border border-white/5" />
+          <div className="bg-bg-secondary/50 backdrop-blur-md border border-border rounded-full px-6 py-2.5 flex items-center gap-3 hover:border-accent/30 transition-colors">
+            <Coins className="h-4 w-4 text-amber-400" />
+            <span className="text-sm font-bold">{isCreditsLoading ? "..." : creditBalance}</span>
+            <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Credits</span>
+          </div>
+
+          <div className="bg-bg-secondary/50 backdrop-blur-md border border-border rounded-full px-6 py-2.5 flex items-center gap-3 hover:border-accent/30 transition-colors">
+            <Star className="h-4 w-4 text-indigo-400" />
+            <span className="text-sm font-bold capitalize">{convexUser?.plan || "Free"}</span>
+            <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Plan</span>
+          </div>
+        </motion.div>
+
+        {/* Projects Grid Section */}
+        <section className="min-h-[400px]">
+          {isProjectsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="aspect-4/3 rounded-2xl bg-bg-secondary/50 animate-pulse border border-border" />
               ))}
             </div>
-          ) : projects && projects.length > 0 ? (
+          ) : projects?.length > 0 ? (
             <ProjectGrid projects={projects} />
           ) : (
-            <EmptyState />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-border rounded-3xl bg-bg-secondary/20"
+            >
+              <div className="w-24 h-24 rounded-full bg-bg-tertiary border border-border flex items-center justify-center mb-6 shadow-2xl">
+                <FolderOpen className="h-10 w-10 text-text-muted" />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-text-primary mb-3 tracking-tight">No projects yet</h3>
+              <p className="text-text-muted text-sm max-w-xs mb-10 leading-relaxed">
+                Upload your first photo to start your journey with professional AI enhancements.
+              </p>
+              <Button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isCreating}
+                className="btn-primary h-14 px-10 font-bold uppercase tracking-widest text-xs rounded-full shadow-xl"
+              >
+                {isCreating ? (
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-5 w-5 mr-2" />
+                )}
+                Create First Project
+              </Button>
+            </motion.div>
           )}
-        </div>
-
-        {/* New Project Modal */}
-        <NewProjectModal
-          isOpen={showNewProjectModal}
-          onClose={() => setShowNewProjectModal(false)}
-        />
+        </section>
       </div>
     </div>
   );
 }
-
-// Empty state when user has no projects
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-24 h-24 rounded-full bg-slate-900 flex items-center justify-center mb-8 border border-white/5 shadow-2xl">
-        <Image className="h-10 w-10 text-slate-700" />
-      </div>
-
-      <h3 className="text-2xl font-bold text-white mb-3">
-        No projects yet
-      </h3>
-
-      <p className="text-slate-500 mb-8 max-w-xs">
-        Your restored photos will appear here once you upload them.
-      </p>
-    </div>
-  );
-}
-
