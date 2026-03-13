@@ -3,10 +3,11 @@ import crypto from "crypto";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
+export const dynamic = "force-dynamic";
 
 export async function POST(request) {
   try {
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
     const rawBody = await request.text();
     const signature = request.headers.get("x-razorpay-signature");
 
