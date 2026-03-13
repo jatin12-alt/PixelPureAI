@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import ImageKit from "imagekit";
+import ImageKit from "@imagekit/nodejs";
 import { auth } from "@clerk/nextjs/server";
 
 export const dynamic = "force-dynamic";
