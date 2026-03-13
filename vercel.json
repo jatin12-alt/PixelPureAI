@@ -1,0 +1,5 @@
+{ 
+  "buildCommand": "npx convex deploy && next build", 
+  "installCommand": "npm install --legacy-peer-deps", 
+  "framework": "nextjs" 
+} 
