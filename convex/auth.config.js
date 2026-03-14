@@ -16,5 +16,9 @@ export default {
       domain: "right-bobcat-84.clerk.accounts.dev",
       applicationID: "convex",
     },
+    {
+      domain: "https://right-bobcat-84.clerk.accounts.dev",
+      applicationID: "right-bobcat-84.clerk.accounts.dev",
+    },
   ],
 };
