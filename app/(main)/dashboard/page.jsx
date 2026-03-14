@@ -159,7 +159,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Projects Grid Section */}
-        <section className="min-h-[400px] mb-20">
+        <section className="min-h-100 mb-20">
           {isProjectsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (

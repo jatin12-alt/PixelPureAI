@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -63,7 +64,7 @@ import { useCredits } from "@/hooks/use-credits";
 // Dynamically import heavy components
 const ComparisonSlider = dynamic(() => import("@/components/comparison-slider"), {
   ssr: false,
-  loading: () => <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-bg-secondary rounded-3xl animate-pulse" />
+  loading: () => <div className="w-full h-full min-h-100 flex items-center justify-center bg-bg-secondary rounded-3xl animate-pulse" />
 });
 const CreditDetailsModal = dynamic(() => import("@/components/credit-details-modal").then(mod => mod.CreditDetailsModal), {
   ssr: false
@@ -701,8 +702,8 @@ function StudioContent() {
                     )}
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-2 text-[var(--success)] text-sm font-bold py-2">
-                    <div className="w-2 h-2 rounded-full bg-[var(--success)]" />
+                  <div className="flex items-center gap-2 text-(--success) text-sm font-bold py-2">
+                    <div className="w-2 h-2 rounded-full bg-(--success)" />
                     Applied successfully
                   </div>
                 )}
@@ -722,7 +723,7 @@ function StudioContent() {
       <div className="lg:hidden fixed bottom-0 left-0 w-full bg-slate-950/90 backdrop-blur-2xl border-t border-white/10 p-4 pb-[calc(12px+env(safe-area-inset-bottom))] z-30">
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
           {TOOLS.map((t) => (
-            <button key={t.id} onClick={() => handleToolChange(t.id)} className={`flex flex-col items-center gap-1 min-w-[60px] ${activeTool === t.id ? "text-accent" : "text-text-muted"}`}>
+            <button key={t.id} onClick={() => handleToolChange(t.id)} className={`flex flex-col items-center gap-1 min-w-15 ${activeTool === t.id ? "text-accent" : "text-text-muted"}`}>
               <div className={`p-2.5 rounded-xl ${activeTool === t.id ? "bg-accent text-white shadow-lg" : "bg-white/5"}`}><t.icon className="h-5 w-5" /></div>
               <span className="text-[9px] font-bold uppercase tracking-tighter">{t.name}</span>
             </button>
@@ -749,8 +750,8 @@ function StudioContent() {
             {!toolApplied ? (
               <Button onClick={applyAITransformation} disabled={isProcessing} className="w-full h-12 btn-primary font-bold uppercase tracking-widest text-xs">Apply</Button>
             ) : (
-              <div className="flex items-center justify-center gap-2 py-3 text-[var(--success)] font-bold text-sm">
-                <div className="w-2 h-2 rounded-full bg-[var(--success)]" />
+              <div className="flex items-center justify-center gap-2 py-3 text-(--success) font-bold text-sm">
+                <div className="w-2 h-2 rounded-full bg-(--success)" />
                 Applied! Select another tool
               </div>
             )}
