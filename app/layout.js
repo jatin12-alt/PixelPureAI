@@ -29,6 +29,15 @@ export const metadata = {
   description: "Transform blurry, old, or low-quality photos into stunning HD masterpieces with AI magic. PixelPureAI offers AI enhancement, upscaling, background removal, and more.",
   keywords: ["AI photo restoration", "image upscaler", "background removal", "AI image editor", "photo enhancement"],
   authors: [{ name: "PixelPureAI Team" }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PixelPureAI",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
   openGraph: {
     title: "PixelPureAI | AI-Powered Photo Magic",
     description: "The most powerful photo restoration tool for everyone. Restore your memories in seconds.",
@@ -59,6 +68,8 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="icon" href="/logo-text.png" sizes="any" />
         <link rel="preconnect" href="https://ik.imagekit.io" />
+        <meta name="theme-color" content="#8B5CF6" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
       <body className={`${sora.variable} ${dmSans.variable} font-dm`}>
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />

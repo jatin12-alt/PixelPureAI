@@ -1,0 +1,14 @@
+{ 
+  "name": "PixelPureAI", 
+  "short_name": "PixelPure", 
+  "description": "AI-Powered Photo Enhancement", 
+  "start_url": "/studio", 
+  "display": "standalone", 
+  "background_color": "#08080F", 
+  "theme_color": "#8B5CF6", 
+  "orientation": "portrait", 
+  "icons": [ 
+    { "src": "/logo-text.png", "sizes": "192x192", "type": "image/png" }, 
+    { "src": "/logo-text.png", "sizes": "512x512", "type": "image/png" } 
+  ] 
+}

@@ -1,6 +1,19 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Sparkles,
   User,
@@ -24,6 +37,8 @@ import {
   Share2,
   Coins,
   Zap,
+  MoreHorizontal,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -209,12 +224,18 @@ function StudioContent() {
   const [toolParams, setToolParams] = useState({});
   const [wasRestored, setWasRestored] = useState(false);
   const [livePreviewUrl, setLivePreviewUrl] = useState(null);
+  const [toolApplied, setToolApplied] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   const localPreviewRef = useRef(null);
   const uploadInputRef = useRef(null);
   const { balance: credits, isLoading: isCreditsLoading, deduct, canAfford } = useCredits();
   
   const selectedToolData = TOOLS.find((t) => t.id === activeTool) || TOOLS[0];
+
+  useEffect(() => {
+    setToolApplied(false);
+  }, [activeTool]);
 
   // ─── Load Project ───────────────────────────────────────────────
   const { data: loadedProject } = useConvexQuery(api.projects.getProject, projectId && isSignedIn ? { projectId } : "skip");
@@ -319,6 +340,7 @@ function StudioContent() {
           setOriginalUrl(data.url);
           setRestoredUrl(null);
           setAppliedTransforms([]);
+          setToolApplied(false);
           toast.success("Uploaded!");
 
           // ─── Change 1: Auto Enhance ───
@@ -388,6 +410,7 @@ function StudioContent() {
         resultUrl = `${resultUrl}${separator}v=${Date.now()}`;
         
         setRestoredUrl(resultUrl);
+        setToolApplied(true);
         toast.success(`${selectedToolData.name} applied successfully!`);
       }
     } catch (err) { 
@@ -396,8 +419,8 @@ function StudioContent() {
     finally { setIsProcessing(false); }
   }, [imagekitUrl, appliedTransforms, selectedToolData, toolParams]);
 
-  const handleReset = () => { setRestoredUrl(null); setAppliedTransforms([]); toast.info("Reset!"); };
-  const handleClear = () => { setOriginalUrl(null); setImagekitUrl(null); setRestoredUrl(null); setAppliedTransforms([]); };
+  const handleReset = () => { setRestoredUrl(null); setAppliedTransforms([]); setToolApplied(false); toast.info("Reset!"); };
+  const handleClear = () => { setOriginalUrl(null); setImagekitUrl(null); setRestoredUrl(null); setAppliedTransforms([]); setToolApplied(false); };
 
   const handleDownload = async () => {
     const targetUrl = livePreviewUrl || restoredUrl || originalUrl;
@@ -457,23 +480,51 @@ function StudioContent() {
 
       <header className="h-16 border-b border-border px-4 sm:px-6 flex items-center justify-between bg-bg-primary/80 backdrop-blur-xl z-20 shrink-0">
         <div className="flex items-center gap-3">
+          {imagekitUrl && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden text-text-muted hover:text-white"
+                onClick={() => {
+                  if (restoredUrl) setShowLeaveDialog(true);
+                  else router.push("/dashboard");
+                }}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                className="hidden md:flex items-center gap-2 text-text-muted hover:text-white rounded-full px-4"
+                onClick={() => {
+                  if (restoredUrl) setShowLeaveDialog(true);
+                  else router.push("/dashboard");
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">Dashboard</span>
+              </Button>
+            </>
+          )}
           <Link href="/" className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-accent" />
             <span className="font-display font-bold text-lg tracking-tight">PixelPureAI</span>
           </Link>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold cursor-pointer hover:bg-white/5" onClick={() => setIsCreditsModalOpen(true)}>
-            🪙 {credits} download credits
+        {/* Desktop Header Buttons (md:flex) */}
+        <div className="hidden md:flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setIsCreditsModalOpen(true)}>
+            <Coins className="h-3 w-3 text-amber-400" />
+            {credits} remaining
           </div>
           <CreditDetailsModal isOpen={isCreditsModalOpen} onClose={() => setIsCreditsModalOpen(false)} />
-          {appliedTransforms.length > 0 && <Button variant="outline" size="sm" onClick={handleReset} className="rounded-full text-xs h-8"><RotateCcw className="h-3.5 w-3.5 mr-1.5" />Reset</Button>}
-          {(restoredUrl || originalUrl) && <Button variant="outline" size="sm" onClick={handleShare} className="rounded-full text-xs h-8"><Share2 className="h-3.5 w-3.5 mr-1.5" />Share</Button>}
-          {originalUrl && <Button variant="outline" size="sm" onClick={handleClear} className="rounded-full text-xs h-8 hover:text-red-400"><Trash2 className="h-3.5 w-3.5 sm:mr-1.5" />Clear</Button>}
-          {imagekitUrl && <Button variant="outline" size="sm" onClick={handleSaveProject} disabled={isSavingProject} className="rounded-full text-xs h-9 px-5 font-bold uppercase tracking-widest">{isSavingProject ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4 mr-2" />}Save</Button>}
+          {appliedTransforms.length > 0 && <Button variant="outline" size="sm" onClick={handleReset} className="rounded-full text-xs h-8 px-4 font-bold"><RotateCcw className="h-3.5 w-3.5 mr-1.5" />Reset</Button>}
+          {(restoredUrl || originalUrl) && <Button variant="outline" size="sm" onClick={handleShare} className="rounded-full text-xs h-8 px-4 font-bold"><Share2 className="h-3.5 w-3.5 mr-1.5" />Share</Button>}
+          {originalUrl && <Button variant="outline" size="sm" onClick={handleClear} className="rounded-full text-xs h-8 px-4 font-bold hover:text-red-400 hover:border-red-400/50"><Trash2 className="h-3.5 w-3.5 mr-1.5" />Clear</Button>}
+          {imagekitUrl && <Button variant="outline" size="sm" onClick={handleSaveProject} disabled={isSavingProject} className="rounded-full text-xs h-9 px-5 font-bold uppercase tracking-widest bg-white/5">{isSavingProject ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4 mr-2" />}Save</Button>}
           <Button 
-            className="btn-primary h-9 px-4 sm:px-5 text-xs font-bold uppercase tracking-widest rounded-full" 
+            className="btn-primary h-9 px-5 text-xs font-bold uppercase tracking-widest rounded-full shadow-lg shadow-accent/20" 
             disabled={isUploading || !!originalUrl} 
             onClick={() => uploadInputRef.current?.click()}
           >
@@ -482,7 +533,78 @@ function StudioContent() {
           </Button>
           <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onDrop([f]); e.target.value = ""; }} />
         </div>
+
+        {/* Mobile Header Buttons (md:hidden) */}
+        <div className="flex md:hidden items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="rounded-full h-9 w-9 border-border bg-white/5" 
+            disabled={isUploading || !!originalUrl} 
+            onClick={() => uploadInputRef.current?.click()}
+          >
+            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="rounded-full h-9 w-9 border-border bg-white/5">
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-slate-900 border-white/10 rounded-2xl p-2 shadow-2xl">
+              <DropdownMenuItem className="rounded-xl py-3 focus:bg-white/5 cursor-pointer" onClick={() => setIsCreditsModalOpen(true)}>
+                <Coins className="h-4 w-4 mr-3 text-amber-400" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold">Credits</span>
+                  <span className="text-[10px] text-text-muted">{credits} remaining</span>
+                </div>
+              </DropdownMenuItem>
+              <div className="h-px bg-white/5 my-1" />
+              {originalUrl && (
+                <DropdownMenuItem className="rounded-xl py-3 focus:bg-white/5 cursor-pointer text-red-400 focus:text-red-400" onClick={handleClear}>
+                  <Trash2 className="h-4 w-4 mr-3" />
+                  <span className="text-xs font-bold">Clear Photo</span>
+                </DropdownMenuItem>
+              )}
+              {appliedTransforms.length > 0 && (
+                <DropdownMenuItem className="rounded-xl py-3 focus:bg-white/5 cursor-pointer" onClick={handleReset}>
+                  <RotateCcw className="h-4 w-4 mr-3" />
+                  <span className="text-xs font-bold">Reset Enhancements</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
+
+      {/* Leave Confirmation Dialog */}
+      <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <DialogContent className="bg-slate-900 border-white/10 rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Save your work?</DialogTitle>
+            <DialogDescription className="text-text-muted">
+              You have unsaved enhancements. Save your project before leaving?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="rounded-full font-bold" onClick={() => setShowLeaveDialog(false)}>Cancel</Button>
+            <Button 
+              variant="ghost"
+              className="rounded-full bg-white/5 hover:bg-white/10 text-white border-white/10 font-bold"
+              onClick={() => router.push("/dashboard")}
+            >
+              Leave anyway
+            </Button>
+            <Button 
+              className="btn-primary rounded-full font-bold"
+              onClick={handleSaveProject}
+            >
+              Save & Leave
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT PANEL */}
@@ -502,7 +624,7 @@ function StudioContent() {
         </aside>
 
         {/* CENTER CANVAS */}
-        <main {...getRootProps()} className="flex-1 bg-[#05050E] relative flex items-center justify-center p-4 sm:p-10 overflow-hidden">
+        <main {...getRootProps()} className="flex-1 bg-[#05050E] relative flex items-center justify-center p-4 sm:p-10 overflow-hidden canvas-container touch-action-none" style={{ touchAction: 'none' }}>
           <input {...getInputProps()} />
           <AnimatePresence mode="wait">
             {!originalUrl ? (
@@ -564,19 +686,26 @@ function StudioContent() {
               )}
 
               <div className="mt-auto space-y-4">
-                <Button onClick={applyAITransformation} disabled={isProcessing || !originalUrl} className="w-full h-14 btn-primary rounded-2xl font-black uppercase tracking-widest text-xs">
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Applying instantly...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Apply Magic
-                    </>
-                  )}
-                </Button>
+                {!toolApplied ? (
+                  <Button onClick={applyAITransformation} disabled={isProcessing || !originalUrl} className="w-full h-14 btn-primary rounded-2xl font-black uppercase tracking-widest text-xs">
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Applying instantly...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4 mr-2" />
+                        Apply Magic
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2 text-[var(--success)] text-sm font-bold py-2">
+                    <div className="w-2 h-2 rounded-full bg-[var(--success)]" />
+                    Applied successfully
+                  </div>
+                )}
                 {restoredUrl && <Button onClick={handleDownload} variant="outline" className="w-full h-12 rounded-2xl font-black uppercase tracking-widest text-xs"><Download className="h-4 w-4 mr-2" />Download HD</Button>}
               </div>
             </div>
@@ -590,7 +719,7 @@ function StudioContent() {
       </div>
 
       {/* MOBILE BAR */}
-      <div className="lg:hidden fixed bottom-0 left-0 w-full bg-slate-950/90 backdrop-blur-2xl border-t border-white/10 p-4 z-30">
+      <div className="lg:hidden fixed bottom-0 left-0 w-full bg-slate-950/90 backdrop-blur-2xl border-t border-white/10 p-4 pb-[calc(12px+env(safe-area-inset-bottom))] z-30">
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
           {TOOLS.map((t) => (
             <button key={t.id} onClick={() => handleToolChange(t.id)} className={`flex flex-col items-center gap-1 min-w-[60px] ${activeTool === t.id ? "text-accent" : "text-text-muted"}`}>
@@ -617,7 +746,14 @@ function StudioContent() {
                 <Slider value={[toolParams[selectedToolData.id] ?? selectedToolData.params.default]} min={selectedToolData.params.min} max={selectedToolData.params.max} onValueChange={([v]) => setToolParams(p => ({...p, [selectedToolData.id]: v}))} />
               </div>
             )}
-            <Button onClick={applyAITransformation} disabled={isProcessing} className="w-full h-12 btn-primary font-bold uppercase tracking-widest text-xs">Apply</Button>
+            {!toolApplied ? (
+              <Button onClick={applyAITransformation} disabled={isProcessing} className="w-full h-12 btn-primary font-bold uppercase tracking-widest text-xs">Apply</Button>
+            ) : (
+              <div className="flex items-center justify-center gap-2 py-3 text-[var(--success)] font-bold text-sm">
+                <div className="w-2 h-2 rounded-full bg-[var(--success)]" />
+                Applied! Select another tool
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>

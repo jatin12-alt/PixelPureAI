@@ -93,7 +93,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-primary pt-8 pb-20 font-dm text-text-primary">
+    <div className="min-h-screen bg-bg-primary pt-8 pb-[calc(80px+env(safe-area-inset-bottom))] font-dm text-text-primary">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Page Header */}
