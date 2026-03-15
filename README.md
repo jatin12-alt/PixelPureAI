@@ -157,7 +157,7 @@ npx convex dev
 npm run dev
 ```
 
-7. Open [http://localhost:3000](http://localhost:3000)
+7. Open [https://pixel-pure-ai.vercel.app/](https://pixel-pure-ai.vercel.app/)
 
 ---
 
