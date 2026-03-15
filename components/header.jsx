@@ -15,6 +15,7 @@ import { CreditDetailsModal } from "./credit-details-modal";
 
 export default function Header() {
   const [isCreditsModalOpen, setIsCreditsModalOpen] = React.useState(false);
+  const [isNavOpen, setIsNavOpen] = React.useState(false);
   const { isLoading: isUserLoading } = useStoreUser();
   const { balance: creditBalance, isLoading: isCreditsLoading } = useCredits();
   const path = usePathname();
@@ -119,18 +120,18 @@ export default function Header() {
           </Unauthenticated>
 
           <div className="lg:hidden">
-            <Sheet>
+            <Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full text-text-muted">
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="bg-[#0A0A14]/95 backdrop-blur-2xl border-r border-white/10 p-0 flex flex-col h-full w-[300px] shadow-2xl">
+              <SheetContent side="left" className="bg-[#0A0A14]/95 backdrop-blur-2xl border-r border-white/10 p-0 flex flex-col h-full w-75 shadow-2xl">
                 <SheetHeader className="sr-only">
                   <SheetTitle>Navigation Menu</SheetTitle>
                 </SheetHeader>
                 <div className="p-8 border-b border-white/5">
-                  <Link href="/" className="flex items-center gap-3 group">
+                  <Link href="/" className="flex items-center gap-3 group" onClick={() => setIsNavOpen(false)}>
                     <div className="w-10 h-10 rounded-2xl bg-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-accent/20">
                       <Sparkles className="h-6 w-6 text-accent" />
                     </div>
@@ -144,6 +145,7 @@ export default function Header() {
                       <Authenticated key={`mobile-auth-${link.href}`}>
                         <Link 
                           href={link.href} 
+                          onClick={() => setIsNavOpen(false)}
                           className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 ${path === link.href ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-text-muted hover:bg-white/5 hover:text-white"}`}
                         >
                           <link.icon className={`h-5 w-5 ${path === link.href ? "text-white" : "text-accent/60"}`} />
@@ -154,6 +156,7 @@ export default function Header() {
                         <Unauthenticated key={`mobile-unauth-${link.href}`}>
                           <Link 
                             href={link.href} 
+                            onClick={() => setIsNavOpen(false)}
                             className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 ${path === link.href ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-text-muted hover:bg-white/5 hover:text-white"}`}
                           >
                             <link.icon className={`h-5 w-5 ${path === link.href ? "text-white" : "text-accent/60"}`} />

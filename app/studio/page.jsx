@@ -299,7 +299,7 @@ function StudioContent() {
         width: 0, height: 0,
       });
       toast.success("Project saved!");
-      router.push("/dashboard");
+      router.back();
     } catch (err) {
       toast.error(err.message || "Failed to save project.");
     }
@@ -412,6 +412,7 @@ function StudioContent() {
         
         setRestoredUrl(resultUrl);
         setToolApplied(true);
+        setIsSheetOpen(false); // Auto-close sheet on apply
         toast.success(`${selectedToolData.name} applied successfully!`);
       }
     } catch (err) { 
@@ -466,7 +467,18 @@ function StudioContent() {
     document.body.removeChild(link);
   };
 
-  const handleToolChange = (id) => { setActiveTool(id); if (window.innerWidth <= 768 && imagekitUrl) setIsSheetOpen(true); };
+  const handleToolChange = (id) => { 
+    setActiveTool(id); 
+    const tool = TOOLS.find(t => t.id === id);
+    if (window.innerWidth <= 768 && imagekitUrl) {
+      if (tool && !tool.params) {
+        // If tool has no params, just close sheet if it was open (though it shouldn't be for this tool yet)
+        setIsSheetOpen(false);
+      } else {
+        setIsSheetOpen(true);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-bg-primary text-text-primary overflow-hidden font-dm">
@@ -489,7 +501,7 @@ function StudioContent() {
                 className="md:hidden text-text-muted hover:text-white"
                 onClick={() => {
                   if (restoredUrl) setShowLeaveDialog(true);
-                  else router.push("/dashboard");
+                  else router.back();
                 }}
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -499,11 +511,11 @@ function StudioContent() {
                 className="hidden md:flex items-center gap-2 text-text-muted hover:text-white rounded-full px-4"
                 onClick={() => {
                   if (restoredUrl) setShowLeaveDialog(true);
-                  else router.push("/dashboard");
+                  else router.back();
                 }}
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="text-xs font-bold uppercase tracking-widest">Dashboard</span>
+                <span className="text-xs font-bold uppercase tracking-widest">Back</span>
               </Button>
             </>
           )}
@@ -562,16 +574,28 @@ function StudioContent() {
                 </div>
               </DropdownMenuItem>
               <div className="h-px bg-white/5 my-1" />
-              {originalUrl && (
-                <DropdownMenuItem className="rounded-xl py-3 focus:bg-white/5 cursor-pointer text-red-400 focus:text-red-400" onClick={handleClear}>
-                  <Trash2 className="h-4 w-4 mr-3" />
-                  <span className="text-xs font-bold">Clear Photo</span>
+              {imagekitUrl && (
+                <DropdownMenuItem className="rounded-xl py-3 focus:bg-white/5 cursor-pointer" onClick={handleSaveProject}>
+                  <Settings className="h-4 w-4 mr-3" />
+                  <span className="text-xs font-bold">Save Project</span>
+                </DropdownMenuItem>
+              )}
+              {(restoredUrl || originalUrl) && (
+                <DropdownMenuItem className="rounded-xl py-3 focus:bg-white/5 cursor-pointer" onClick={handleShare}>
+                  <Share2 className="h-4 w-4 mr-3" />
+                  <span className="text-xs font-bold">Share Photo</span>
                 </DropdownMenuItem>
               )}
               {appliedTransforms.length > 0 && (
                 <DropdownMenuItem className="rounded-xl py-3 focus:bg-white/5 cursor-pointer" onClick={handleReset}>
-                  <RotateCcw className="h-4 w-4 mr-3" />
+                  <RotateCcw className="h-4 w-4 mr-3 text-amber-400" />
                   <span className="text-xs font-bold">Reset Enhancements</span>
+                </DropdownMenuItem>
+              )}
+              {originalUrl && (
+                <DropdownMenuItem className="rounded-xl py-3 focus:bg-white/5 cursor-pointer text-red-400 focus:text-red-400" onClick={handleClear}>
+                  <Trash2 className="h-4 w-4 mr-3" />
+                  <span className="text-xs font-bold">Clear Photo</span>
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -593,7 +617,7 @@ function StudioContent() {
             <Button 
               variant="ghost"
               className="rounded-full bg-white/5 hover:bg-white/10 text-white border-white/10 font-bold"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.back()}
             >
               Leave anyway
             </Button>

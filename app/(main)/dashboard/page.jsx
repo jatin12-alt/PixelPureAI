@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Image as ImageIcon, Sparkles, Upload, History, Zap, FolderOpen, Layout, Coins, Star, Loader2 } from "lucide-react";
+import { Plus, Image as ImageIcon, Sparkles, Upload, History, Zap, FolderOpen, Layout, Coins, Star, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConvexQuery, useConvexMutation, useConvexPaginatedQuery } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { useCredits } from "@/hooks/use-credits";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { SettingsModal } from "@/components/settings-modal";
 
 // Dynamically import ProjectGrid to improve dashboard load speed
 const ProjectGrid = dynamic(() => import("./_components/project-grid").then(mod => mod.ProjectGrid), {
@@ -22,6 +23,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const fileInputRef = useRef(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Get user's projects (Paginated)
   const { 
@@ -98,31 +100,53 @@ export default function DashboardPage() {
         
         {/* Page Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-1"
-          >
-            <h1 className="text-4xl font-display font-extrabold tracking-tight bg-linear-to-r from-white to-text-muted bg-clip-text text-transparent">
-              My Projects
-            </h1>
-            <p className="text-text-muted text-sm font-medium">
-              Manage and enhance your visual library
-            </p>
-          </motion.div>
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="space-y-1"
+            >
+              <h1 className="text-4xl font-display font-extrabold tracking-tight bg-linear-to-r from-white to-text-muted bg-clip-text text-transparent">
+                My Projects
+              </h1>
+              <p className="text-text-muted text-sm font-medium">
+                Manage and enhance your visual library
+              </p>
+            </motion.div>
 
-          <Button 
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isCreating}
-            className="btn-primary h-12 px-8 font-bold uppercase tracking-widest text-xs rounded-full shadow-lg shadow-accent/20"
-          >
-            {isCreating ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Plus className="h-4 w-4 mr-2" />
-            )}
-            New Project
-          </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="md:hidden rounded-full hover:bg-white/5 text-text-muted"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings className="h-6 w-6" />
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hidden md:flex rounded-full hover:bg-white/5 text-text-muted mr-2"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+
+            <Button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isCreating}
+              className="btn-primary h-12 px-8 font-bold uppercase tracking-widest text-xs rounded-full shadow-lg shadow-accent/20"
+            >
+              {isCreating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              New Project
+            </Button>
+          </div>
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -220,6 +244,11 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
+
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </div>
   );
 }

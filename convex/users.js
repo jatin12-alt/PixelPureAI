@@ -102,6 +102,37 @@ export const updateUser = mutation({
   },
 });
 
+export const updateNotificationSettings = mutation({
+  args: {
+    settings: v.object({
+      updates: v.boolean(),
+      credits: v.boolean(),
+      marketing: v.boolean(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      notificationSettings: args.settings,
+    });
+  },
+});
+
 export const deleteUser = mutation({
   args: {
     tokenIdentifier: v.string(),

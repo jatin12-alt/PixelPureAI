@@ -58,9 +58,9 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold text-sm mb-6 uppercase tracking-widest">Resources</h4>
             <ul className="space-y-4">
-              <li><Link href="#" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Help Center</Link></li>
-              <li><Link href="#" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Contact Us</Link></li>
-              <li><Link href="#" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Careers</Link></li>
+              <li><Link href="/help" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Help Center</Link></li>
+              <li><Link href="/contact" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Contact Us</Link></li>
+              <li><Link href="/careers" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Careers</Link></li>
             </ul>
           </div>
 
@@ -69,7 +69,7 @@ export default function Footer() {
             <h4 className="text-white font-bold text-sm mb-6 uppercase tracking-widest">Legal</h4>
             <ul className="space-y-4">
               <li><Link href="/privacy" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Privacy Notice</Link></li>
-              <li><Link href="#" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Terms of Service</Link></li>
+              <li><Link href="/terms" className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function Footer() {
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex gap-6 text-xs text-slate-500 font-bold uppercase tracking-widest">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-white transition-colors">Terms & Conditions</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
           </div>
           <div className="flex items-center gap-4">
             <Link href="#" className="p-3 bg-white/5 rounded-full hover:bg-indigo-500/20 hover:text-indigo-400 transition-all">

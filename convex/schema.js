@@ -14,6 +14,11 @@ export default defineSchema({
     exportsThisMonth: v.number(),
     createdAt: v.number(),
     lastActiveAt: v.number(),
+    notificationSettings: v.optional(v.object({
+      updates: v.boolean(),
+      credits: v.boolean(),
+      marketing: v.boolean(),
+    })),
   })
     .index("by_token", ["tokenIdentifier"])
     .index("by_email", ["email"])

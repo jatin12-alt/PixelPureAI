@@ -1,21 +1,24 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-export const metadata = {
-  title: "Privacy Policy | PixelPureAI",
-  description: "Learn how PixelPureAI collects, uses, and protects your personal information and image data.",
-};
+import { useRouter } from "next/navigation";
 
 export default function PrivacyPage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary font-dm pb-20 pt-24 px-6">
       <div className="max-w-3xl mx-auto">
-        <Link href="/" className="inline-flex items-center gap-2 text-text-muted hover:text-white transition-colors mb-12 group">
+        <button 
+          onClick={() => router.back()} 
+          className="inline-flex items-center gap-2 text-text-muted hover:text-white transition-colors mb-12 group"
+        >
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          <span className="text-sm font-bold uppercase tracking-widest">Back to Home</span>
-        </Link>
+          <span className="text-sm font-bold uppercase tracking-widest">Go Back</span>
+        </button>
 
         <h1 className="text-4xl sm:text-5xl font-display font-extrabold tracking-tight mb-4">
           Privacy Policy
