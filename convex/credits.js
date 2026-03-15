@@ -4,7 +4,7 @@ import { v } from "convex/values";
 
 // ── Plan credit limits ─────────────────────────────────────────────────────
 const PLAN_CREDITS = {
-  free: 100,
+  free: 20,
   pro: 200,
   business: 1000,
 };

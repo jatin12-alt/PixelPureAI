@@ -25,6 +25,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://pixelpureai.com"),
   title: "PixelPureAI | Professional AI Photo Restoration & Enhancement",
   description: "Transform blurry, old, or low-quality photos into stunning HD masterpieces with AI magic. PixelPureAI offers AI enhancement, upscaling, background removal, and more.",
   keywords: ["AI photo restoration", "image upscaler", "background removal", "AI image editor", "photo enhancement"],

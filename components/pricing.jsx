@@ -19,6 +19,7 @@ const PricingCard = ({
 }) => {
   const [ref, isVisible] = useIntersectionObserver();
   const { user, isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
 
   const handleAction = async () => {
@@ -33,15 +34,24 @@ const PricingCard = ({
     }
 
     try {
+      const token = await getToken();
       const res = await fetch("/api/payments/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ plan: id, amount: price }),
       });
 
       const data = await res.json();
 
       if (data.success) {
+        if (typeof window.Razorpay === 'undefined') {
+          toast.error("Razorpay SDK not loaded. Please refresh the page.");
+          return;
+        }
+
         const options = {
           key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
           amount: data.amount,
@@ -49,19 +59,30 @@ const PricingCard = ({
           name: "PixelPureAI",
           description: `Upgrade to ${plan} Plan`,
           order_id: data.orderId,
-          image: "/logo.png",
+          image: "/logo-text.png",
           handler: async function (response) {
-            const verifyRes = await fetch("/api/payments/verify-payment", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(response),
-            });
-            const verifyData = await verifyRes.json();
-            if (verifyData.success) {
-              toast.success("Payment successful! Your plan is being activated.");
-              router.push("/studio");
-            } else {
-              toast.error("Payment verification failed.");
+            try {
+              const token = await getToken();
+              const verifyRes = await fetch("/api/payments/verify-payment", {
+                method: "POST",
+                headers: { 
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  ...response,
+                  plan: id
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                toast.success("Payment successful! Your plan is being activated.");
+                router.push("/studio");
+              } else {
+                toast.error("Payment verification failed. Please contact support.");
+              }
+            } catch (err) {
+              toast.error("Failed to verify payment. Please check your dashboard.");
             }
           },
           prefill: {
@@ -71,15 +92,25 @@ const PricingCard = ({
           theme: {
             color: "#8B5CF6",
           },
+          modal: {
+            ondismiss: function() {
+              toast.info("Payment cancelled.");
+            }
+          }
         };
 
         const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response){
+          toast.error("Payment failed: " + response.error.description);
+        });
         rzp.open();
       } else {
-        toast.error("Failed to initiate payment.");
+        console.error("Order Creation Error:", data.error);
+        toast.error(`Failed to initiate payment: ${data.error || "Unknown error"}`);
       }
     } catch (err) {
-      toast.error("An error occurred during payment.");
+      console.error("Payment Process Error:", err);
+      toast.error("An error occurred during payment initialization.");
     }
   };
 
@@ -147,7 +178,7 @@ const PricingSection = () => {
       plan: "Free",
       price: 0,
       features: [
-        "100 Credits included",
+        "20 Credits included",
         "Basic AI Tools",
         "Standard Export",
         "Community Support",

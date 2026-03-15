@@ -11,6 +11,16 @@ export const getSubscription = query({
   },
 });
 
+export const getOrderByOrderId = query({
+  args: { razorpayOrderId: v.string() },
+  handler: async (ctx, { razorpayOrderId }) => {
+    return await ctx.db
+      .query("orders")
+      .withIndex("by_order", (q) => q.eq("razorpayOrderId", razorpayOrderId))
+      .unique();
+  },
+});
+
 export const updateSubscription = mutation({
   args: {
     userId: v.string(),

@@ -38,14 +38,23 @@ export async function POST(request) {
         const plan = notes?.plan;
 
         if (userId && plan) {
-          // 1. Update order status
+          // 1. Check if already processed
+          const existingOrder = await convex.query(api.subscriptions.getOrderByOrderId, {
+            razorpayOrderId: orderId,
+          });
+
+          if (existingOrder && existingOrder.status === "paid") {
+            return NextResponse.json({ success: true, message: "Order already processed" });
+          }
+
+          // 2. Update order status
           await convex.mutation(api.subscriptions.updateOrder, {
             razorpayOrderId: orderId,
             razorpayPaymentId: paymentId,
             status: "paid",
           });
 
-          // 2. Activate subscription
+          // 3. Activate subscription
           const resetAmount = plan === "pro" ? 200 : plan === "business" ? 1000 : 0;
           
           await convex.mutation(api.subscriptions.updateSubscription, {
@@ -56,7 +65,7 @@ export async function POST(request) {
             cancelAtPeriodEnd: false,
           });
 
-          // 3. Add credits for the new plan
+          // 4. Add credits for the new plan
           if (resetAmount > 0) {
             await convex.mutation(api.credits.addCredits, {
               userId,
